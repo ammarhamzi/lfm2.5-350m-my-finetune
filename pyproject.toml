@@ -1,0 +1,37 @@
+[project]
+name = "lfm-my"
+version = "0.1.0"
+description = "Bahasa Malaysia spellchecker: GECToR-style fine-tune of LFM2.5-Encoder-350M"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "torch>=2.6",
+    "transformers==5.1.0",
+    "safetensors==0.7.0",
+    "datasets>=3.0",
+    "huggingface_hub>=0.26",
+]
+
+[project.optional-dependencies]
+app = [
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+]
+dev = [
+    "pytest>=8",
+    "httpx>=0.27",
+    "fastapi==0.115.6",
+    "uvicorn[standard]==0.34.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lfm_my"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = [
+    "network: tests that need network access / HF hub (deselect with '-m \"not network\"')",
+]
