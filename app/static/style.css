@@ -1,0 +1,30 @@
+:root { color-scheme: light; --bg:#faf9f7; --card:#fff; --ink:#1c1917; --mut:#78716c;
+        --line:#e7e5e4; --green:#dcfce7; --green-ink:#166534; --red:#fee2e2; --red-ink:#991b1b; }
+* { box-sizing: border-box; }
+body { margin:0; font: 16px/1.6 -apple-system, "Segoe UI", sans-serif; background:var(--bg); color:var(--ink); }
+.wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; }
+h1 { font-size: 30px; margin: 0 0 4px; } h1 em { font-style: italic; }
+.sub { color: var(--mut); margin: 0 0 24px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.card h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .06em; color: var(--mut);
+           margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center; }
+textarea { width: 100%; min-height: 220px; border: 1px solid var(--line); border-radius: 8px;
+           padding: 12px; font: inherit; resize: vertical; }
+.meta { display: flex; justify-content: space-between; color: var(--mut); font-size: 13px; margin-top: 6px; }
+details { margin-top: 10px; font-size: 14px; color: var(--mut); }
+details label { display: block; margin: 8px 0; }
+details input[type=range] { width: 100%; }
+.output { min-height: 220px; border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+mark { background: var(--green); color: var(--green-ink); border-radius: 3px; padding: 0 2px; text-decoration: none; }
+s.deleted { color: var(--red-ink); background: var(--red); border-radius: 3px; padding: 0 2px; }
+.legend { display: flex; gap: 16px; color: var(--mut); font-size: 13px; margin-top: 8px; }
+.sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 4px; }
+.sw.edit { background: var(--green); } .sw.del { background: var(--red); }
+.stats { display: flex; gap: 16px; color: var(--mut); font-size: 13px; margin-top: 8px; }
+.examples { margin-top: 24px; color: var(--mut); font-size: 14px; }
+.examples div { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.examples button, #copy { border: 1px solid var(--line); background: var(--card); border-radius: 999px;
+           padding: 6px 14px; font: inherit; font-size: 13px; cursor: pointer; }
+#copy { border-radius: 6px; padding: 4px 12px; }

@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bahasa Malaysia spellchecker</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Bahasa Malaysia <em>spellchecker</em></h1>
+    <p class="sub">Betulkan ejaan dan tatabahasa dengan LFM2.5. <span id="status">Memuatkan model…</span></p>
+  </header>
+
+  <main class="grid">
+    <section class="card">
+      <h2>Input</h2>
+      <textarea id="input" spellcheck="false" placeholder="Tulis atau tampal teks di sini…"></textarea>
+      <div class="meta"><span id="count">0 aksara</span><span>semakan selepas 650 ms</span></div>
+      <details>
+        <summary>Tetapan lanjut</summary>
+        <label>Ambang keyakinan <output id="mepv">0.00</output>
+          <input type="range" id="mep" min="0" max="1" step="0.05" value="0"></label>
+        <label>Pass pembetulan <output id="mitv">3</output>
+          <input type="range" id="mit" min="1" max="5" step="1" value="3"></label>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2>Dibetulkan <button id="copy" disabled>Salin</button></h2>
+      <div id="output" class="output" aria-live="polite"></div>
+      <div class="legend"><span><i class="sw edit"></i>Diubah</span>
+        <span><i class="sw del"></i>Dibuang</span></div>
+      <div class="stats"><span id="activity">Sedia</span>
+        <span>Edit: <strong id="stat-edits">—</strong></span>
+        <span>Latensi: <strong id="stat-latency">—</strong></span></div>
+    </section>
+  </main>
+
+  <section class="examples">
+    <span>Contoh</span><div id="examples"></div>
+  </section>
+</div>
+
+<script>
+const EXAMPLES = [
+  { label:"Ejaan", text:"Saya sudah makan nasik di kedai itu." },
+  { label:"Imbuhan", text:"Dia men tulis surat kepada kawannya." },
+  { label:"Huruf kecil", text:"ali pergi ke sekolah setiap hari." },
+  { label:"Teks bersih", text:"Dia pergi ke sekolah setiap hari." },
+];
+const $ = id => document.getElementById(id);
+const ATTACH_LEFT = /^[.,!?;:%)\]}»…]+$/;
+const OPEN = /^[(\[{«]+$/;
+const input = $("input"), output = $("output");
+let timer = null, seq = 0, lastCorrected = "";
+
+function updateCount(){ $("count").textContent = `${input.value.length} aksara`; }
+function schedule(d = 650){ clearTimeout(timer); timer = setTimeout(correct, d); }
+
+function render(segments){
+  output.innerHTML = "";
+  let prev = null, edits = 0;
+  for (const s of segments){
+    for (const tok of s.text.split(/\s+/).filter(Boolean)){
+      if (prev !== null && !ATTACH_LEFT.test(tok) && !OPEN.test(prev))
+        output.append(document.createTextNode(" "));
+      let node;
+      if (s.kind === "edit"){ node = document.createElement("mark"); edits++; }
+      else if (s.kind === "del"){ node = document.createElement("s"); node.className = "deleted"; edits++; }
+      else node = document.createTextNode(tok);
+      if (node.nodeType === 1) node.textContent = tok;
+      output.append(node);
+      prev = tok;
+    }
+  }
+  return edits;
+}
+
+async function correct(){
+  const text = input.value.replace(/\s+/g, " ").trim();
+  if (!text){ output.innerHTML = ""; $("activity").textContent = "Sedia"; return; }
+  const my = ++seq, t0 = performance.now();
+  $("activity").textContent = "Menyemak…";
+  try {
+    const r = await fetch("/api/correct", { method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ text, min_error_prob:+$("mep").value, max_iter:+$("mit").value }) });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const data = await r.json();
+    if (my !== seq) return;
+    const edits = render(data.segments);
+    lastCorrected = data.corrected;
+    $("copy").disabled = !lastCorrected;
+    $("activity").textContent = data.changed ? "Dibetulkan" : "Nampak betul";
+    $("stat-edits").textContent = String(edits);
+    $("stat-latency").textContent = `${Math.round(performance.now() - t0)} ms`;
+  } catch (e){ if (my === seq) $("activity").textContent = "Ralat"; console.error(e); }
+}
+
+input.addEventListener("input", () => { updateCount(); schedule(); });
+for (const r of [$("mep"), $("mit")]) r.addEventListener("input", e => {
+  $(e.target.id + "v").textContent = e.target.id === "mep"
+    ? (+e.target.value).toFixed(2) : e.target.value;
+  schedule(0);
+});
+for (const ex of EXAMPLES){
+  const b = document.createElement("button");
+  b.textContent = ex.label;
+  b.onclick = () => { input.value = ex.text; updateCount(); schedule(0); };
+  $("examples").append(b);
+}
+$("copy").onclick = async () => {
+  await navigator.clipboard.writeText(lastCorrected);
+  $("copy").textContent = "Disalin";
+  setTimeout(() => $("copy").textContent = "Salin", 1200);
+};
+fetch("/api/health").then(r => r.json())
+  .then(d => { $("status").textContent = `Model sedia (${d.mem_human ?? ""})`; })
+  .catch(() => { $("status").textContent = "Model tidak tersedia"; });
+updateCount();
+</script>
+</body>
+</html>
